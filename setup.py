@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as f:
 setup(
     name="srai-core",
     packages=find_packages(),
-    version="0.4.0",
+    version="0.4.1",
     license="MIT",
     package_data={},
     python_requires=">=3.5",
