@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Filestore(ABC):
+class FileStore(ABC):
     def __init__(self, path_dir: str) -> None:
         self.path_dir = path_dir
 
