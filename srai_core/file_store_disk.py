@@ -11,7 +11,7 @@ class FileStoreDisk:
         return os.path.join(self.path_dir, key)
 
     def exists(self, key) -> bool:
-        return os.path.is_file(self.get_path_file(key))
+        return os.path.isfile(self.get_path_file(key))
 
     def download(self, key) -> bool:
         pass

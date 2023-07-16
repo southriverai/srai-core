@@ -30,6 +30,6 @@ class JsondictStore:
     def write_jsondict(self, jsondict_key: dict, jsondict_value: dict) -> None:
         key = self.sha256hexdigest(jsondict_key)
         path_file = self.backing_store.get_path_file(key)
-        with open(path_file, "r") as file:
+        with open(path_file, "w") as file:
             json.dump(jsondict_value, file)
         self.backing_store.upload(key)
