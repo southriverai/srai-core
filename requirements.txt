@@ -1,5 +1,5 @@
 black==23.3.0
 flake8==6.0.0
 twine==4.0.2
-boto3==1.18.61 #TODO move this to srai-core
-paramiko==3.3.1 #TODO move this to srai-core
+boto3==1.18.61
+paramiko==3.3.1 

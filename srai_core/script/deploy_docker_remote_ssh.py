@@ -10,11 +10,10 @@ from srai_core.tools_docker import (
     release_docker_aws,
     remove_container,
 )
+from srai_core.command_handler_ssh import CommandHandlerSsh
 
 
-if __name__ == "__main__":
-    build_docker()
-    release_docker_aws()
+def main():
     account_id = "169192938140"
     region_name = "eu-west-1"
     hostname = "18.185.177.93"  # TODO these could even come from boto3
@@ -22,6 +21,11 @@ if __name__ == "__main__":
     path_file_pem = "c:/key/lightsaildefaultkey-eu-central-1.pem"
     if not os.path.exists(path_file_pem):
         raise Exception(f"File {path_file_pem} does not exist")
+
+    client_ssh = get_client_ssh(hostname, username, path_file_pem)
+    command_handler = CommandHandlerSsh(client_ssh)
+    build_docker(command_handler)
+    release_docker_aws(command_handler)
 
     image_tag = get_image_tag()
     container_name = image_tag.split(":")[0].split("/")[-1]
@@ -32,15 +36,18 @@ if __name__ == "__main__":
     dict_env["AWS_DEFAULT_REGION"] = os.environ.get("AWS_DEFAULT_REGION")
     dict_env["IMAGE_TAG"] = image_tag
 
-    ssh_client = get_client_ssh(hostname, username, path_file_pem)
-    list_container_name_present = list_container_name(ssh_client)
+    list_container_name_present = list_container_name(client_ssh)
     print(f"Container name: {container_name}")
     print(list_container_name_present)
     if container_name in list_container_name_present:
         print(f"Container {container_name} is in use")
-        stop_container(ssh_client, container_name)
-        remove_container(ssh_client, container_name)
-    remove_container(ssh_client, container_name)  # TODO for good riddance
+        stop_container(command_handler, container_name)
+        remove_container(command_handler, container_name)
+    remove_container(command_handler, container_name)  # TODO for good riddance
     start_container_ssh(
-        ssh_client, account_id, region_name, image_tag, container_name, dict_env
+        command_handler, account_id, region_name, image_tag, container_name, dict_env
     )
+
+
+if __name__ == "__main__":
+    main()

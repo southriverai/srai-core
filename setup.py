@@ -6,10 +6,11 @@ with open("README.md", "r") as f:
 with open("requirements.txt", "r") as f:
     requirements = f.read().splitlines()
 
+
 setup(
     name="srai-core",
     packages=find_packages(),
-    version="0.8.0",
+    version="0.10.0",  # TODO manual....
     license="MIT",
     package_data={},
     python_requires=">=3.5",
@@ -21,9 +22,15 @@ setup(
         "console_scripts": [
             "build_docker=srai_core.script.build_docker:main",
             "deploy_docker_local=srai_core.script.deploy_docker_local:main",
-            "release_docker_aws=srai_core.script.release_docker_aws:main",
+            "deploy_docker_remote_ssh=srai_core.script.deploy_docker_remote_ssh:main",
+            "release_docker_aws_local=srai_core.script.release_docker_aws_local:main",
+            "release_docker_aws_ssh=srai_core.script.release_docker_aws_ssh:main",
+            "release_code_public=srai_core.script.release_code_public:main",
             "create_repository=srai_core.script.create_repository:main",
             "list_images=srai_core.script.list_images:main",
+            "list_containers_ssh = srai_core.script.list_containers_ssh:main",
+            "list_container_status = srai_core.script.list_container_status:main",
+            "list_commands=srai_core.script.list_commands:main",
         ],
     },
     long_description=long_description,

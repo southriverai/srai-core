@@ -1,12 +1,37 @@
 import subprocess
 from typing import Dict, List
-import boto3
 import base64
 from paramiko import SSHClient
-import sys
 import paramiko
 from srai_core.base_command_handler import BaseCommandHandler
 from srai_core.tools_env import get_string_from_env, get_client_ecr
+
+
+def list_ecr_images() -> Dict[str, List[str]]:
+    client_ecr = get_client_ecr()
+    account_id = "169192938140"
+    region_name = "eu-west-1"
+    url = get_registry_url(account_id, region_name)
+    print(url)
+    # Create an ECR client
+
+    # Get a list of all repositories in your ECR
+    repositories = client_ecr.describe_repositories()
+
+    dict_list_images = {}
+    for repo in repositories["repositories"]:
+        repo_name = repo["repositoryName"]
+        print(f"Images in repository: {repo_name}")
+        dict_list_images[repo_name] = []
+
+        # Paginate through image details since ECR might have many images
+        paginator = client_ecr.get_paginator("list_images")
+        for page in paginator.paginate(repositoryName=repo_name):
+            for image in page["imageIds"]:
+                image_tag = image.get("imageTag", "latest")
+                dict_list_images[repo_name].append(image_tag)
+
+    return dict_list_images
 
 
 def read_setup_cfg() -> dict:
@@ -71,9 +96,14 @@ def get_registry_url(account_id, region_name) -> str:
     return f"{account_id}.dkr.ecr.{region_name}.amazonaws.com"
 
 
-def build_docker(command_handler: BaseCommandHandler) -> None:
+def build_docker(command_handler: BaseCommandHandler, path=None) -> None:
     image_tag = get_image_tag()
-    command = f"docker build -t {image_tag} ."  # TODO add --no-cache
+    if path is not None:
+        command = (
+            f"cd {path}; docker build -t {image_tag} {path}"  # TODO add --no-cache
+        )
+    else:
+        command = f"docker build -t {image_tag} ."  # TODO add --no-cache
     command_handler.execute(command)
 
 
@@ -84,23 +114,14 @@ def get_ecr_login_token():
     return base64.b64decode(token).decode("utf-8")
 
 
-def login_docker_to_ecr_command(account_id: str, region_name: str) -> str:
+def login_docker_to_ecr(
+    command_handler: BaseCommandHandler, account_id: str, region_name: str
+) -> None:
     token = get_ecr_login_token()
     username, password = token.split(":")
     registry_url = get_registry_url(account_id, region_name)
     command = f"docker login --username {username} --password {password} {registry_url}"
-    return command
-
-
-def login_docker_to_ecr_ssh(ssh_client: SSHClient, account_id: str, region_name: str):
-    command = login_docker_to_ecr_command(account_id, region_name)
-    exec_ssh(ssh_client, command)
-
-
-def login_docker_to_ecr_local(account_id, region_name):
-    command = login_docker_to_ecr_command(account_id, region_name)
-    print(command)
-    subprocess.run(command, shell=True)
+    command_handler.execute(command)
 
 
 def list_ecr_repository():
@@ -117,22 +138,20 @@ def create_ecr_repository():
     ecr_client.create_repository(repositoryName=image_name)
 
 
-def release_docker_aws() -> None:
+def release_docker_aws(command_handler: BaseCommandHandler) -> None:
     image_tag = get_image_tag()
     account_id = get_string_from_env("AWS_ACCOUNT_ID")
     region_name = get_string_from_env("AWS_REGION_NAME")
 
-    login_docker_to_ecr_local(account_id, region_name)
+    login_docker_to_ecr(command_handler, account_id, region_name)
     registry_url = get_registry_url(account_id, region_name)
 
     command = f"docker tag {image_tag} "
     command += f"{registry_url}/{image_tag}"
-    print(command)
-    subprocess.run(command, shell=True)
+    command_handler.execute(command)
 
     command = f"docker push {registry_url}/{image_tag}"
-    print(command)
-    subprocess.run(command, shell=True)
+    command_handler.execute(command)
 
 
 def start_container_command(
@@ -165,24 +184,24 @@ def start_container_local(
 
 
 def start_container_ssh(
-    ssh_client: SSHClient,
+    command_handler: BaseCommandHandler,
     account_id: str,
     region_name: str,
     image_tag: str,
     container_name: str,
     dict_env: Dict[str, str],
 ) -> None:
-    command = login_docker_to_ecr_ssh(ssh_client, account_id, region_name)
+    command = login_docker_to_ecr(command_handler, account_id, region_name)
 
     command = pull_image_command(account_id, region_name)
     # Execute the command
-    exec_ssh(ssh_client, command)
+    command_handler.execute(command)
 
     registry_url = get_registry_url(account_id, region_name)
     command = start_container_command(image_tag, container_name, dict_env)
     command = command.replace(image_tag, f"{registry_url}/{image_tag}")
     # Execute the command
-    exec_ssh(ssh_client, command)
+    command_handler.execute(command)
 
 
 def list_container_name(ssh_client: SSHClient) -> List[str]:
@@ -195,36 +214,97 @@ def list_container_name(ssh_client: SSHClient) -> List[str]:
     return output.split("\n")
 
 
-def stop_container(ssh_client: SSHClient, container_name: str) -> None:
+def parse_table(list_header: List[str], str_table: str) -> List[Dict[str, str]]:
+    list_start = []
+    list_end = []
+    list_dict_line = []
+    list_line = str_table.split("\n")
+    for header in list_header:
+        list_start.append(str_table.find(header))
+
+    for i, start in enumerate(list_start[:-1]):
+        list_end.append(list_start[i + 1])
+    list_end.append(-1)
+
+    for line in list_line[1:]:
+        dict_line = {}
+        for header, start, end in zip(list_header, list_start, list_end):
+            if end == -1:
+                dict_line[header] = line[start:].strip()
+            else:
+                dict_line[header] = line[start:end].strip()
+        list_dict_line.append(dict_line)
+    return list_dict_line
+
+
+def list_container_status(
+    command_handler: BaseCommandHandler,
+) -> dict:
+    # Command to check if the Docker container is running
+    command = "docker ps -a"
+
+    # Execute the command
+    output_out, _ = command_handler.execute(command)
+    list_header = [
+        "CONTAINER ID",
+        "IMAGE",
+        "COMMAND",
+        "CREATED",
+        "STATUS",
+        "PORTS",
+        "NAMES",
+    ]
+    return parse_table(list_header, output_out)
+
+
+def container_logs(
+    command_handler: BaseCommandHandler,
+    container_name: str,
+    logs_count: int,
+) -> List[str]:
+    # Command to check if the Docker container is running
+    command = f"docker logs --tail {logs_count} {container_name}"
+
+    # Execute the command
+    output_out, _ = command_handler.execute(command)
+    return output_out.split("\n")
+
+
+def stop_container(
+    command_handler: BaseCommandHandler,
+    container_name: str,
+) -> None:
     # Command to stop the Docker container
     command = f"docker stop {container_name}"
 
     # Execute the command
-    exec_ssh(ssh_client, command)
+    command_handler.execute(command)
 
 
-def stop_container_local(container_name: str) -> None:
-    # Command to stop the Docker container
-    command = f"docker stop {container_name}"
-
-    # Execute the command
-    subprocess.run(command, shell=True)
-
-
-def remove_container(ssh_client: SSHClient, container_name: str) -> None:
+def remove_container(
+    command_handler: BaseCommandHandler,
+    container_name: str,
+) -> None:
     # Command to stop the Docker container
     command = f"docker rm {container_name}"
 
     # Execute the command
-    exec_ssh(ssh_client, command)
+    command_handler.execute(command)
 
 
-def remove_container_local(container_name: str) -> None:
-    # Command to stop the Docker container
-    command = f"docker rm {container_name}"
+def clone_repository(
+    command_handler: BaseCommandHandler,
+    package_name: str,
+    path: str,
+    git_token: str,
+) -> None:
+    # clear the directory
+    command = f"rm -rf {path}/{package_name}"
+    command_handler.execute(command)
+    # clone the repository with a token
 
-    # Execute the command
-    subprocess.run(command, shell=True)
+    command = f"git clone https://{git_token}@github.com/southriverai/{package_name}.git {path}/{package_name}"
+    command_handler.execute(command)
 
 
 def exec_ssh(
