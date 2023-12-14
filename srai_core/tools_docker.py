@@ -1,10 +1,12 @@
-import subprocess
-from typing import Dict, List
+import asyncio
 import base64
-from paramiko import SSHClient
+from typing import Dict, List
+
 import paramiko
-from srai_core.base_command_handler import BaseCommandHandler
-from srai_core.tools_env import get_string_from_env, get_client_ecr
+from paramiko import SSHClient
+
+from srai_core.command_handler_base import CommandHandlerBase
+from srai_core.tools_env import get_client_ecr, get_string_from_env
 
 
 def list_ecr_images() -> Dict[str, List[str]]:
@@ -68,14 +70,10 @@ def read_module_init() -> dict:
     return dict_module_init
 
 
-def get_client_ssh(
-    hostname: str, username: str, path_file_pem: str, port: int = 22
-) -> SSHClient:
+def get_client_ssh(hostname: str, username: str, path_file_pem: str, port: int = 22) -> SSHClient:
     # Initialize SSH client
     ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(
-        paramiko.AutoAddPolicy()
-    )  # Automatically add the server's host key
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # Automatically add the server's host key
     # Load private key
     private_key = paramiko.RSAKey(filename=path_file_pem)
 
@@ -96,15 +94,30 @@ def get_registry_url(account_id, region_name) -> str:
     return f"{account_id}.dkr.ecr.{region_name}.amazonaws.com"
 
 
-def build_docker(command_handler: BaseCommandHandler, path=None) -> None:
+# TODO all should be async
+async def build_docker_async(command_handler: CommandHandlerBase, path=None) -> None:
     image_tag = get_image_tag()
+    # stop all containers using this image
+    container_name = image_tag.split(":")[0].split("/")[-1]
+    stop_container(command_handler, container_name)
+
+    # remove all containers using this image
+    remove_container(command_handler, container_name)
+
+    # remove the image
+    command = f"docker rmi {image_tag}"
+    command_handler.execute(command)
+
+    # build the image
     if path is not None:
-        command = (
-            f"cd {path}; docker build -t {image_tag} {path}"  # TODO add --no-cache
-        )
+        command = f"cd {path}; docker build -t {image_tag} {path}"  # TODO add --no-cache
     else:
         command = f"docker build -t {image_tag} ."  # TODO add --no-cache
     command_handler.execute(command)
+
+
+def build_docker(command_handler: CommandHandlerBase, path=None) -> None:
+    return asyncio.run(build_docker_async(command_handler, path))
 
 
 def get_ecr_login_token():
@@ -114,9 +127,7 @@ def get_ecr_login_token():
     return base64.b64decode(token).decode("utf-8")
 
 
-def login_docker_to_ecr(
-    command_handler: BaseCommandHandler, account_id: str, region_name: str
-) -> None:
+def login_docker_to_ecr(command_handler: CommandHandlerBase, account_id: str, region_name: str) -> None:
     token = get_ecr_login_token()
     username, password = token.split(":")
     registry_url = get_registry_url(account_id, region_name)
@@ -138,7 +149,7 @@ def create_ecr_repository():
     ecr_client.create_repository(repositoryName=image_name)
 
 
-def release_docker_aws(command_handler: BaseCommandHandler) -> None:
+async def release_docker_local_to_aws_async(command_handler: CommandHandlerBase) -> None:
     image_tag = get_image_tag()
     account_id = get_string_from_env("AWS_ACCOUNT_ID")
     region_name = get_string_from_env("AWS_REGION_NAME")
@@ -152,6 +163,10 @@ def release_docker_aws(command_handler: BaseCommandHandler) -> None:
 
     command = f"docker push {registry_url}/{image_tag}"
     command_handler.execute(command)
+
+
+def release_docker_aws_local(command_handler: CommandHandlerBase) -> None:
+    return asyncio.run(release_docker_local_to_aws_async(command_handler))
 
 
 def start_container_command(
@@ -173,33 +188,37 @@ def pull_image_command(account_id, region_name):
     return command
 
 
-def start_container_local(
-    image_tag: str,
-    container_name: str,
-    dict_env: Dict[str, str],
-) -> None:
-    command = start_container_command(image_tag, container_name, dict_env)
-    print(command)
-    subprocess.run(command, shell=True)
-
-
-def start_container_ssh(
-    command_handler: BaseCommandHandler,
+def start_container(
+    command_handler: CommandHandlerBase,
     account_id: str,
     region_name: str,
     image_tag: str,
     container_name: str,
     dict_env: Dict[str, str],
 ) -> None:
+    return asyncio.run(
+        start_container_async(command_handler, account_id, region_name, image_tag, container_name, dict_env)
+    )
+
+
+async def start_container_async(
+    command_handler: CommandHandlerBase,
+    account_id: str,  # TODO remove
+    region_name: str,  # TODO remove
+    image_tag: str,
+    container_name: str,
+    dict_env: Dict[str, str],
+) -> None:
     command = login_docker_to_ecr(command_handler, account_id, region_name)
+    if account_id is not None and region_name is not None:
+        command = pull_image_command(account_id, region_name)
+        # Execute the command
+        command_handler.execute(command)
 
-    command = pull_image_command(account_id, region_name)
-    # Execute the command
-    command_handler.execute(command)
-
-    registry_url = get_registry_url(account_id, region_name)
+        registry_url = get_registry_url(account_id, region_name)
     command = start_container_command(image_tag, container_name, dict_env)
-    command = command.replace(image_tag, f"{registry_url}/{image_tag}")
+    if account_id is not None and region_name is not None:
+        command = command.replace(image_tag, f"{registry_url}/{image_tag}")
     # Execute the command
     command_handler.execute(command)
 
@@ -238,7 +257,7 @@ def parse_table(list_header: List[str], str_table: str) -> List[Dict[str, str]]:
 
 
 def list_container_status(
-    command_handler: BaseCommandHandler,
+    command_handler: CommandHandlerBase,
 ) -> dict:
     # Command to check if the Docker container is running
     command = "docker ps -a"
@@ -258,7 +277,7 @@ def list_container_status(
 
 
 def container_logs(
-    command_handler: BaseCommandHandler,
+    command_handler: CommandHandlerBase,
     container_name: str,
     logs_count: int,
 ) -> List[str]:
@@ -271,7 +290,7 @@ def container_logs(
 
 
 def stop_container(
-    command_handler: BaseCommandHandler,
+    command_handler: CommandHandlerBase,
     container_name: str,
 ) -> None:
     # Command to stop the Docker container
@@ -282,7 +301,7 @@ def stop_container(
 
 
 def remove_container(
-    command_handler: BaseCommandHandler,
+    command_handler: CommandHandlerBase,
     container_name: str,
 ) -> None:
     # Command to stop the Docker container
@@ -293,7 +312,7 @@ def remove_container(
 
 
 def clone_repository(
-    command_handler: BaseCommandHandler,
+    command_handler: CommandHandlerBase,
     package_name: str,
     path: str,
     git_token: str,

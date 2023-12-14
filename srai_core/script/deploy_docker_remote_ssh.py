@@ -34,6 +34,10 @@ def main():
     dict_env["AWS_ACCESS_KEY_ID"] = os.environ.get("AWS_ACCESS_KEY_ID")
     dict_env["AWS_SECRET_ACCESS_KEY"] = os.environ.get("AWS_SECRET_ACCESS_KEY")
     dict_env["AWS_DEFAULT_REGION"] = os.environ.get("AWS_DEFAULT_REGION")
+    dict_env["AWS_REGION_NAME"] = os.environ.get("AWS_DEFAULT_REGION")
+    dict_env["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY")
+    dict_env["MONGODB_CONNECTION_STRING"] = os.environ.get("MONGODB_CONNECTION_STRING")
+    dict_env["MONGODB_DATABASE_NAME"] = os.environ.get("MONGODB_DATABASE_NAME")
     dict_env["IMAGE_TAG"] = image_tag
 
     list_container_name_present = list_container_name(client_ssh)

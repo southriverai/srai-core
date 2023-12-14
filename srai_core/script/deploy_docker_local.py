@@ -1,13 +1,7 @@
-from srai_core.tools_docker import (
-    build_docker,
-    start_container_local,
-    get_image_tag,
-    stop_container_local,
-    remove_container_local,
-)
 import os
-import sys
+
 from srai_core.command_handler_subprocess import CommandHandlerSubprocess
+from srai_core.tools_docker import build_docker, get_image_tag, remove_container, start_container, stop_container
 
 
 def main():
@@ -24,10 +18,9 @@ def main():
 
     container_name = image_tag.split(":")[0].split("/")[-1]
 
-    list_arg = sys.argv[1:]
-    stop_container_local(container_name)
-    remove_container_local(container_name)
-    start_container_local(image_tag, container_name, dict_env)
+    stop_container(command_handler, container_name)
+    remove_container(command_handler, container_name)
+    start_container(command_handler, image_tag, container_name, dict_env)
 
 
 if __name__ == "__main__":
