@@ -29,7 +29,7 @@ class DocumentStoreBase(ABC):
         dict_selected = {}
         for document_id, document in dict_document.items():
             for key in query:
-                if query not in document:
+                if key not in document:
                     continue
                 if document[key] == query[key]:
                     dict_selected[document_id] = document

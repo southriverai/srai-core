@@ -31,13 +31,15 @@ class DocumentStoreMongo(DocumentStoreBase):
             dict_document[document_result["_id"]] = document_result["document"]
         return dict_document
 
-    def load_document_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
-        # TODO limit query language
-        cursor_document_result = self.collection.find(query)
-        dict_document = {}
-        for document_result in cursor_document_result:
-            dict_document[document_result["_id"]] = document_result["document"]
-        return dict_document
+    # TODO: Implement load_document_for_query
+    # def load_document_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
+    #     # TODO limit query language
+    #     cursor_document_result = self.collection.find(query)
+    #     dict_document = {}
+    #     for document_result in cursor_document_result:
+    #         print(document_result)
+    #         dict_document[document_result["_id"]] = document_result["document"]
+    #     return dict_document
 
     def save_document(self, document_id: str, document: dict) -> None:
         self.collection.insert_one({"_id": document_id, "document": document})

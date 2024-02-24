@@ -37,8 +37,17 @@ class DocumentStoreDisk(DocumentStoreBase):
                 raise Exception(f"File {file} is not a json file")
         return dict_document
 
-    def delete(self, document_id: str) -> None:
+    def delete_document(self, document_id: str) -> None:
         os.remove(self.get_path_file(document_id))
+
+    def delete_document_all(self) -> int:
+        count = self.count_document()
+        for file in os.listdir(self.path_dir):
+            if file.endswith(".json"):
+                os.remove(os.path.join(self.path_dir, file))
+            else:
+                raise Exception(f"File {file} is not a json file")
+        return count
 
     def save_document(self, document_id: str, document: dict) -> None:
         with open(self.get_path_file(document_id), "w") as file:
