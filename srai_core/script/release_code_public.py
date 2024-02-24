@@ -13,7 +13,7 @@ def main():
 
     subprocess.run("python setup.py sdist", shell=True, check=True)
 
-    command = f"twine upload dist/* -u{username} -p{password}"
+    command = "twine upload dist/*"
     print(f"Running command: {command}")
     subprocess.run(command, shell=True, check=True)
 

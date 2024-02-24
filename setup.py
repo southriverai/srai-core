@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -10,7 +10,7 @@ with open("requirements.txt", "r") as f:
 setup(
     name="srai-core",
     packages=find_packages(),
-    version="0.10.2",  # TODO manual....
+    version="0.10.3",  # TODO manual....
     license="MIT",
     package_data={},
     python_requires=">=3.5",

@@ -1,4 +1,6 @@
 import os
+from base64 import b64decode
+
 import boto3
 
 
@@ -11,6 +13,18 @@ def get_string_from_env(env_name: str) -> str:
     if value is None:
         raise Exception(f"Environment variable {env_name} is not set")
     return value
+
+
+def get_string_from_env_base64(env_name: str) -> str:
+    value_base64 = get_string_from_env(env_name)
+    return b64decode(value_base64).decode("utf-8")
+
+
+def get_path_from_env(env_name: str) -> str:
+    path_file = get_string_from_env(env_name)
+    if not os.path.exists(path_file):
+        raise Exception(f"Path {path_file} does not exist")
+    return path_file
 
 
 def get_client_s3() -> boto3.client:
