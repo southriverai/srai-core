@@ -28,6 +28,6 @@ class DocumentStoreCached(DocumentStoreBase):
         del self.dict_document[document_id]
         self.inner_store.delete_document(document_id)
 
-    def save(self, document_id: str, document: dict) -> None:
+    def save_document(self, document_id: str, document: dict) -> None:
         self.dict_document[document_id] = document
         self.inner_store.save_document(document_id, document)
