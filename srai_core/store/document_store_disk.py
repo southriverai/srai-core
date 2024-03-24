@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List
+from typing import Dict
 
 from srai_core.store.document_store_base import DocumentStoreBase
 
@@ -23,6 +23,8 @@ class DocumentStoreDisk(DocumentStoreBase):
         return len([name for name in os.listdir(self.path_dir) if name.endswith(".json")])
 
     def load_document(self, document_id: str) -> dict:
+        if not self.exists_document(document_id):
+            raise ValueError(f"Document not found: {document_id}")
         with open(self.get_path_file(document_id), "r") as file:
             return json.load(file)
 

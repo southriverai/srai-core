@@ -1,6 +1,4 @@
-import json
-import os
-from typing import Dict, List
+from typing import Dict
 
 from srai_core.store.document_store_base import DocumentStoreBase
 
@@ -19,7 +17,14 @@ class DocumentStoreCached(DocumentStoreBase):
         return len(self.dict_document)
 
     def load_document(self, document_id: str) -> dict:
-        return self.dict_document[document_id]
+        if document_id not in self.dict_document:
+            if self.inner_store.exists_document(document_id):
+                self.dict_document[document_id] = self.inner_store.load_document(document_id)
+                return self.dict_document[document_id]
+            else:
+                raise ValueError(f"Document not found: {document_id}")
+        else:
+            return self.dict_document[document_id]
 
     def load_document_all(self) -> Dict[str, dict]:
         return self.dict_document.copy()

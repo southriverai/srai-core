@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi

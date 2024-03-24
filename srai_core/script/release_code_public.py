@@ -8,9 +8,6 @@ def main():
     subprocess.run("rm -rf dist", shell=True, check=True)
 
     print("Creating distribution")
-    username = os.environ.get("PYPI_USERNAME")
-    password = os.environ.get("PYPI_PASSWORD")
-
     subprocess.run("python setup.py sdist", shell=True, check=True)
 
     command = "twine upload dist/*"
