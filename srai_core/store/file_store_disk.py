@@ -14,7 +14,7 @@ class FileStoreDisk:
         return os.path.isfile(self.get_path_file(key))
 
     def download(self, key) -> bool:
-        pass
+        raise NotImplementedError()
 
     def upload(self, key) -> bool:
-        pass
+        raise NotImplementedError()

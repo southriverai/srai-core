@@ -18,4 +18,4 @@ class DatabaseDisk(DatabaseBase):
 
     def get_bytes_store(self, name_collection: str) -> BytesStoreBase:
         path_dir_store = os.path.join(self.path_dir, name_collection)
-        return BytesStoreDisk(path_dir_store, ".jpg")
+        return BytesStoreDisk(path_dir_store)
