@@ -34,7 +34,10 @@ class BytesStoreS3(BytesStoreBase):
 
     def load_bytes_all(self) -> Dict[str, bytes]:
         dict_bytes = {}
-        for object in self.client_s3.list_objects(Bucket=self.name_bucket)["Contents"]:
+        list_object = self.client_s3.list_objects(Bucket=self.name_bucket)
+        if "Contents" not in list_object:
+            return dict_bytes
+        for object in list_object["Contents"]:
             bytes_id = object["Key"]
             dict_bytes[bytes_id] = self.load_bytes(bytes_id)
         return dict_bytes
@@ -44,7 +47,10 @@ class BytesStoreS3(BytesStoreBase):
 
     def delete_bytes_all(self) -> int:
         count = self.count_bytes()
-        for object in self.client_s3.list_objects(Bucket=self.name_bucket)["Contents"]:
+        list_object = self.client_s3.list_objects(Bucket=self.name_bucket)
+        if "Contents" not in list_object:
+            return 0
+        for object in list_object["Contents"]:
             self.delete_bytes(object["Key"])
         return count
 

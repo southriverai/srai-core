@@ -181,8 +181,7 @@ def start_container_command(
     return command
 
 
-def pull_image_command(account_id, region_name):
-    image_tag = get_image_tag()
+def pull_image_command(account_id: str, region_name: str, image_tag: str):
     registry_url = get_registry_url(account_id, region_name)
     command = f"docker pull {registry_url}/{image_tag}"
     return command
@@ -211,7 +210,7 @@ async def start_container_async(
 ) -> None:
     command = login_docker_to_ecr(command_handler, account_id, region_name)
     if account_id is not None and region_name is not None:
-        command = pull_image_command(account_id, region_name)
+        command = pull_image_command(account_id, region_name, image_tag)
         # Execute the command
         command_handler.execute(command)
 
