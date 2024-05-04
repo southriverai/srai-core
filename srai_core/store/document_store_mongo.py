@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -18,7 +18,13 @@ class DocumentStoreMongo(DocumentStoreBase):
     def count_document(self) -> int:
         return self.collection.count_documents({})
 
-    def load_document(self, document_id: str) -> None:
+    def load_document(self, document_id: str) -> dict:
+        document = self.try_load_document(document_id)
+        if document is None:
+            raise ValueError(f"Document {document_id} not found")
+        return document
+
+    def try_load_document(self, document_id: str) -> Optional[dict]:
         document_result = self.collection.find_one({"_id": document_id})
         if document_result is None:
             return None

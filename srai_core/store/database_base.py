@@ -9,9 +9,9 @@ class DatabaseBase(ABC):
         self.database_name = database_name
 
     @abstractmethod
-    def get_document_store(self, name_collection: str) -> DocumentStoreBase:
+    def get_document_store(self, collection_name: str) -> DocumentStoreBase:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_bytes_store(self, name_collection: str) -> BytesStoreBase:
+    def get_bytes_store(self, collection_name: str) -> BytesStoreBase:
         raise NotImplementedError()

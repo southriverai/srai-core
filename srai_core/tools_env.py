@@ -1,5 +1,6 @@
 import os
 from base64 import b64decode
+from typing import Any
 
 import boto3
 
@@ -27,7 +28,31 @@ def get_path_from_env(env_name: str) -> str:
     return path_file
 
 
-def get_client_s3() -> boto3.client:
+def get_client_ec2() -> Any:
+    aws_access_key_id = get_string_from_env("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_string_from_env("AWS_SECRET_ACCESS_KEY")
+    aws_region_name = get_string_from_env("AWS_REGION_NAME")
+    return boto3.client(
+        "ec2",
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=aws_region_name,
+    )
+
+
+def get_resource_ec2() -> Any:
+    aws_access_key_id = get_string_from_env("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_string_from_env("AWS_SECRET_ACCESS_KEY")
+    aws_region_name = get_string_from_env("AWS_REGION_NAME")
+    return boto3.resource(
+        "ec2",
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=aws_region_name,
+    )
+
+
+def get_client_s3() -> Any:
     aws_access_key_id = get_string_from_env("AWS_ACCESS_KEY_ID")
     aws_secret_access_key = get_string_from_env("AWS_SECRET_ACCESS_KEY")
     aws_region_name = get_string_from_env("AWS_REGION_NAME")
@@ -39,7 +64,7 @@ def get_client_s3() -> boto3.client:
     )
 
 
-def get_client_ecr() -> boto3.client:
+def get_client_ecr() -> Any:
     aws_access_key_id = get_string_from_env("AWS_ACCESS_KEY_ID")
     aws_secret_access_key = get_string_from_env("AWS_SECRET_ACCESS_KEY")
     aws_region_name = get_string_from_env("AWS_REGION_NAME")
@@ -51,7 +76,7 @@ def get_client_ecr() -> boto3.client:
     )
 
 
-def get_client_ecs() -> boto3.client:
+def get_client_ecs() -> Any:
     aws_access_key_id = get_string_from_env("AWS_ACCESS_KEY_ID")
     aws_secret_access_key = get_string_from_env("AWS_SECRET_ACCESS_KEY")
     aws_region_name = get_string_from_env("AWS_REGION_NAME")

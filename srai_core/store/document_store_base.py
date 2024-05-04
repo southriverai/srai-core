@@ -8,6 +8,11 @@ class DocumentStoreBase(ABC):
     def __init__(self) -> None:
         pass
 
+    def copy_to(self, store_to: "DocumentStoreBase") -> None:
+        dict_document = self.load_document_all()
+        for document_id, document in dict_document.items():
+            store_to.save_document(document_id, document)
+
     @abstractmethod
     def exists_document(self, document_id: str) -> bool:
         raise NotImplementedError()
@@ -38,6 +43,12 @@ class DocumentStoreBase(ABC):
     @abstractmethod
     def delete_document(self, document_id: str) -> None:
         raise NotImplementedError()
+
+    def delete_document_all(self) -> int:
+        dict_document = self.load_document_all()
+        for document_id in dict_document:
+            self.delete_document(document_id)
+        return len(dict_document)
 
     @abstractmethod
     def save_document(self, document_id: str, document: dict) -> None:
