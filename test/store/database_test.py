@@ -30,6 +30,7 @@ def test_database(database: DatabaseBase) -> None:
     assert store.load_document("1") == {"name": "test"}
     assert store.load_document_all() == {"1": {"name": "test"}}
     assert store.load_document_for_query({"name": "test"}) == {"1": {"name": "test"}}
+    store.save_document("1", {"name": "test"})
     # delete store
     store.delete_document_all()
     # database.delete(database_name)
@@ -68,6 +69,7 @@ def test_migrate(database_from: DatabaseBase, database_to: DatabaseBase):
 
 
 if __name__ == "__main__":
+    print("test mongo")
     test_database(get_mongo())
     test_database(get_disk())
     test_migrate(get_disk(), get_mongo())

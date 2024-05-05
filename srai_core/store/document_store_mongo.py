@@ -19,13 +19,12 @@ class DocumentStoreMongo(DocumentStoreBase):
         return self.collection.count_documents({})
 
     def load_document(self, document_id: str) -> dict:
-        document = self.try_load_document(document_id)
-        if document is None:
-            raise ValueError(f"Document {document_id} not found")
-        return document
+        return self.try_load_document(document_id, raise_if_missing=True)  # type: ignore
 
-    def try_load_document(self, document_id: str) -> Optional[dict]:
+    def try_load_document(self, document_id: str, raise_if_missing=False) -> Optional[dict]:
         document_result = self.collection.find_one({"_id": document_id})
+        if raise_if_missing and document_result is None:
+            raise Exception(f"Document with id '{document_id}' not found")
         if document_result is None:
             return None
         return document_result["document"]
@@ -47,8 +46,11 @@ class DocumentStoreMongo(DocumentStoreBase):
     #         dict_document[document_result["_id"]] = document_result["document"]
     #     return dict_document
 
-    def save_document(self, document_id: str, document: dict) -> None:
-        self.collection.insert_one({"_id": document_id, "document": document})
+    def save_document(self, document_id: str, document: dict, update_if_exist=True) -> None:
+        if update_if_exist and self.exists_document(document_id):
+            self.collection.update_one({"_id": document_id}, {"$set": {"document": document}})
+        else:
+            self.collection.insert_one({"_id": document_id, "document": document})
 
     def delete_document(self, document_id: str) -> None:
         query = {"_id": document_id}

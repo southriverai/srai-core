@@ -51,6 +51,8 @@ class DocumentStoreDisk(DocumentStoreBase):
                 raise Exception(f"File {file} is not a json file")
         return count
 
-    def save_document(self, document_id: str, document: dict) -> None:
+    def save_document(self, document_id: str, document: dict, update_if_exist=True) -> None:
+        if not update_if_exist and self.exists_document(document_id):
+            raise ValueError(f"Document already exists: {document_id}")
         with open(self.get_path_file(document_id), "w") as file:
             json.dump(document, file)
