@@ -1,14 +1,16 @@
 from base64 import b64decode, b64encode
 from typing import Dict
 
+from pymongo import MongoClient
+
 from srai_core.store.bytes_store_base import BytesStoreBase
 from srai_core.store.document_store_mongo import DocumentStoreMongo
 
 
 class BytesStoreMongo(BytesStoreBase):
 
-    def __init__(self, connection_string: str, database_name: str, collection_name: str):
-        self.document_store_mongo = DocumentStoreMongo(connection_string, database_name, collection_name)
+    def __init__(self, client: MongoClient, database_name: str, collection_name: str):
+        self.document_store_mongo = DocumentStoreMongo(client, database_name, collection_name)
 
     def exists_bytes(self, bytes_id: str) -> bool:
         return self.document_store_mongo.exists_document(bytes_id)

@@ -1,14 +1,14 @@
 from typing import Dict, Optional
 
 from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
 
 from srai_core.store.document_store_base import DocumentStoreBase
 
 
 class DocumentStoreMongo(DocumentStoreBase):
-    def __init__(self, connection_string: str, database_name: str, collection_name: str):
-        self.client = MongoClient(connection_string, server_api=ServerApi("1"))
+
+    def __init__(self, client: MongoClient, database_name: str, collection_name: str):
+        self.client = client
         self.db = self.client.get_database(database_name)
         self.collection = self.db.get_collection(collection_name)
 

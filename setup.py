@@ -10,7 +10,7 @@ with open("requirements.txt", "r") as f:
 setup(
     name="srai-core",
     packages=find_packages(),
-    version="0.11.10",  # TODO manual....
+    version="0.11.11",  # TODO manual....
     license="MIT",
     package_data={},
     python_requires=">=3.5",
