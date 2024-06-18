@@ -1,7 +1,23 @@
 import subprocess
 
+from srai_core.command_handler_base import CommandHandlerBase
 
-def main():
+
+async def release_code_public_async(command_handler: CommandHandlerBase):
+    print("Delete old distribution")
+    command = "rm -rf dist"
+    command_handler.execute(command)
+
+    print("Creating distribution")
+    command = "python setup.py sdist"
+    command_handler.execute(command)
+
+    print("Uploading distribution")
+    command = "twine upload dist/*"
+    command_handler.execute(command)
+
+
+def release_code_public():
     print("Delete old distribution")
     subprocess.run("rm -rf dist", shell=True, check=True)
 
@@ -14,4 +30,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    release_code_public()
