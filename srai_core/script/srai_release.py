@@ -21,6 +21,7 @@ async def srai_release():
             command_handler = CommandHandlerSubprocess()
             await build_docker_async(command_handler)
             await release_code_public_async(command_handler)
+            sys.exit(0)
 
     else:
         path_deployment_file = sys.argv[1]
