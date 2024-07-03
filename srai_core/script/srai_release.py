@@ -4,6 +4,7 @@ import os
 import sys
 
 from srai_core.command_handler_base import CommandHandlerBase
+from srai_core.command_handler_subprocess import CommandHandlerSubprocess
 from srai_core.script.release_code_public import release_code_public_async
 from srai_core.tools_docker import build_docker_async, release_docker_local_to_aws_async
 
@@ -16,8 +17,11 @@ async def srai_release():
             print("using default deployment_file.json")
             path_deployment_file = "deployment_file.json"
         else:
-            print("Usage: srai_release deployment_file.json")
-            sys.exit(1)
+            print("Doing default release: build_docker and release_code_public")
+            command_handler = CommandHandlerSubprocess()
+            await build_docker_async(command_handler)
+            await release_code_public_async(command_handler)
+
     else:
         path_deployment_file = sys.argv[1]
     with open(path_deployment_file) as f:
