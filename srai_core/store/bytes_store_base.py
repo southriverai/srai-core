@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 class BytesStoreBase(ABC):
@@ -19,6 +19,12 @@ class BytesStoreBase(ABC):
     @abstractmethod
     def load_bytes(self, bytes_id: str) -> bytes:
         raise NotImplementedError()
+
+    def try_load_bytes(self, bytes_id: str) -> Optional[bytes]:
+        if self.exists_bytes(bytes_id):
+            return self.load_bytes(bytes_id)
+        else:
+            return None
 
     @abstractmethod
     def load_list_bytes_id(self) -> List[str]:

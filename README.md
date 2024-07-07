@@ -2,6 +2,9 @@
 
 
 ## Changleog
+### 0.13.1
+- added try load options to stores
+
 ### 0.13.0
 - added dirstore options
 

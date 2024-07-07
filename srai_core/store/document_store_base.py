@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 
 
 class DocumentStoreBase(ABC):
@@ -24,6 +24,12 @@ class DocumentStoreBase(ABC):
     @abstractmethod
     def load_document(self, document_id: str) -> dict:
         raise NotImplementedError()
+
+    def try_load_document(self, bytes_id: str) -> Optional[dict]:
+        if self.exists_document(bytes_id):
+            return self.load_document(bytes_id)
+        else:
+            return None
 
     @abstractmethod
     def load_document_all(self) -> Dict[str, dict]:

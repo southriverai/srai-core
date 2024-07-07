@@ -24,6 +24,12 @@ class DirStoreBase(ABC):
     def load_dir(self, dir_id: str, path_dir_target: str) -> None:
         raise NotImplementedError()
 
+    def try_load_dir(self, dir_id: str, path_dir_target: str) -> None:
+        if self.exists_dir(dir_id):
+            return self.load_dir(dir_id, path_dir_target)
+        else:
+            return None
+
     @abstractmethod
     def save_dir(self, dir_id: str, path_dir_source: str) -> None:
         raise NotImplementedError()
