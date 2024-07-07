@@ -29,6 +29,10 @@ class DocumentStoreBase(ABC):
     def load_document_all(self) -> Dict[str, dict]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def load_list_document_id(self) -> list:
+        raise NotImplementedError()
+
     def load_document_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
         dict_document = self.load_document_all()
         dict_selected = {}
@@ -45,7 +49,7 @@ class DocumentStoreBase(ABC):
         raise NotImplementedError()
 
     def delete_document_all(self) -> int:
-        dict_document = self.load_document_all()
+        dict_document = self.load_list_document_id()
         for document_id in dict_document:
             self.delete_document(document_id)
         return len(dict_document)

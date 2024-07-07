@@ -1,5 +1,5 @@
 from base64 import b64decode, b64encode
-from typing import Dict
+from typing import Dict, List
 
 from pymongo import MongoClient
 
@@ -21,6 +21,9 @@ class BytesStoreMongo(BytesStoreBase):
     def load_bytes(self, bytes_id: str) -> bytes:
         document = self.document_store_mongo.load_document(bytes_id)
         return b64decode(document["bytesbase64"])
+
+    def load_list_bytes_id(self) -> List[str]:
+        return self.document_store_mongo.load_list_document_id()
 
     def load_bytes_all(self) -> Dict[str, bytes]:
         dict_document = self.document_store_mongo.load_document_all()

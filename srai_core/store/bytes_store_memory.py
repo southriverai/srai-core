@@ -19,6 +19,9 @@ class BytesStoreMemory(BytesStoreBase):
     def exists_bytes(self, bytes_id: str) -> bool:
         return bytes_id in self.dict_bytes
 
+    def load_list_bytes_id(self) -> list:
+        return list(self.dict_bytes.keys())
+
     def load_bytes_all(self) -> Dict[str, bytes]:
         return self.dict_bytes
 

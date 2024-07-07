@@ -21,6 +21,10 @@ class DocumentStoreMongo(DocumentStoreBase):
     def load_document(self, document_id: str) -> dict:
         return self.try_load_document(document_id, raise_if_missing=True)  # type: ignore
 
+    def load_list_document_id(self) -> list:
+        cursor_document_result = self.collection.find({})
+        return [document_result["_id"] for document_result in cursor_document_result]
+
     def try_load_document(self, document_id: str, raise_if_missing=False) -> Optional[dict]:
         document_result = self.collection.find_one({"_id": document_id})
         if raise_if_missing and document_result is None:

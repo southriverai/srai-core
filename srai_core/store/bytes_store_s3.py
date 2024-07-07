@@ -1,5 +1,4 @@
-import os
-from typing import Dict
+from typing import Dict, List
 
 from srai_core.store.bytes_store_base import BytesStoreBase
 from srai_core.tools.tools_s3 import create_client_and_resource_s3
@@ -23,7 +22,7 @@ class BytesStoreS3(BytesStoreBase):
         try:
             self.client_s3.head_object(Bucket=self.name_bucket, Key=bytes_id)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def count_bytes(self) -> int:
@@ -31,6 +30,12 @@ class BytesStoreS3(BytesStoreBase):
 
     def load_bytes(self, bytes_id: str) -> bytes:
         return self.resource_s3.Object(self.name_bucket, bytes_id).get()["Body"].read()
+
+    def load_list_bytes_id(self) -> List[str]:
+        list_object = self.client_s3.list_objects(Bucket=self.name_bucket)
+        if "Contents" not in list_object:
+            return []
+        return [object["Key"] for object in list_object["Contents"]]
 
     def load_bytes_all(self) -> Dict[str, bytes]:
         dict_bytes = {}

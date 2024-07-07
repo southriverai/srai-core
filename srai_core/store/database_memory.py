@@ -6,8 +6,9 @@ from srai_core.store.document_store_memory import DocumentStoreMemory
 
 
 class DatabaseMemory(DatabaseBase):
-    def __init__(self):
-        pass
+
+    def __init__(self, database_name: str):
+        super().__init__(database_name)
 
     def get_document_store(self, name: str) -> DocumentStoreBase:
         return DocumentStoreMemory()

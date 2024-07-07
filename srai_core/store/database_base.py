@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
 from srai_core.store.bytes_store_base import BytesStoreBase
+from srai_core.store.dir_store_base import DirStoreBase
+from srai_core.store.dir_store_bytes_store import DirStoreBytesStore
 from srai_core.store.document_store_base import DocumentStoreBase
 
 
@@ -15,3 +17,6 @@ class DatabaseBase(ABC):
     @abstractmethod
     def get_bytes_store(self, collection_name: str) -> BytesStoreBase:
         raise NotImplementedError()
+
+    def get_dir_store(self, collection_name: str) -> DirStoreBase:
+        return DirStoreBytesStore(self.get_bytes_store(collection_name))

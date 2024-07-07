@@ -20,7 +20,7 @@ class DocumentStoreDisk(DocumentStoreBase):
         return os.path.isfile(self.get_path_file(document_id))
 
     def count_document(self) -> int:
-        return len([name for name in os.listdir(self.path_dir) if name.endswith(".json")])
+        return len(self.load_list_document_id())
 
     def load_document(self, document_id: str) -> dict:
         if not self.exists_document(document_id):
@@ -28,15 +28,14 @@ class DocumentStoreDisk(DocumentStoreBase):
         with open(self.get_path_file(document_id), "r") as file:
             return json.load(file)
 
+    def load_list_document_id(self) -> list:
+        return [file.split(".")[0] for file in os.listdir(self.path_dir) if file.endswith(".json")]
+
     def load_document_all(self) -> Dict[str, dict]:
+        list_document_id = self.load_list_document_id()
         dict_document = {}
-        for file in os.listdir(self.path_dir):
-            if file.endswith(".json"):
-                document_id = file.split(".")[0]
-                with open(os.path.join(self.path_dir, file), "r") as file:
-                    dict_document[document_id] = json.load(file)
-            else:
-                raise Exception(f"File {file} is not a json file")
+        for document_id in list_document_id:
+            dict_document[document_id] = self.load_document(document_id)
         return dict_document
 
     def delete_document(self, document_id: str) -> None:
