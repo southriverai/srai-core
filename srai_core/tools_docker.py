@@ -1,9 +1,11 @@
 import asyncio
 import base64
+import os
 from typing import Dict, List
 
 import paramiko
 from paramiko import SSHClient
+from pip._vendor import tomli  # TODO replace in 3.11
 
 from srai_core.command_handler_base import CommandHandlerBase
 from srai_core.tools_env import get_client_ecr, get_string_from_env
@@ -83,11 +85,21 @@ def get_client_ssh(hostname: str, username: str, path_file_pem: str, port: int =
 
 
 def get_image_tag() -> str:
-    dict_module_init = read_module_init()
-    image_name = "srai/" + dict_module_init["__title__"]
-    image_version = dict_module_init["__version__"]
-    image_tag = f"{image_name}:{image_version}"
-    return image_tag
+    if os.path.isfile("pyproject.toml"):
+        with open("pyproject.toml", "rb") as file:
+            toml = tomli.load(file)
+            image_name = "srai/" + toml["tool"]["poetry"]["name"]
+            image_version = toml["tool"]["poetry"]["version"]
+            image_tag = f"{image_name}:{image_version}"
+            return image_tag
+    elif os.path.isfile("setup.cfg"):
+        dict_module_init = read_module_init()
+        image_name = "srai/" + dict_module_init["__title__"]
+        image_version = dict_module_init["__version__"]
+        image_tag = f"{image_name}:{image_version}"
+        return image_tag
+    else:
+        raise Exception("pyproject.toml or setup.cfg not found")
 
 
 def get_registry_url(account_id, region_name) -> str:
@@ -95,7 +107,7 @@ def get_registry_url(account_id, region_name) -> str:
 
 
 # TODO all should be async
-async def build_docker_async(command_handler: CommandHandlerBase, path=None) -> None:
+async def build_docker(command_handler: CommandHandlerBase, path=None) -> None:
     image_tag = get_image_tag()
     # stop all containers using this image
     container_name = image_tag.split(":")[0].split("/")[-1]
@@ -114,10 +126,6 @@ async def build_docker_async(command_handler: CommandHandlerBase, path=None) -> 
     else:
         command = f"docker build -t {image_tag} ."  # TODO add --no-cache
     command_handler.execute(command)
-
-
-def build_docker(command_handler: CommandHandlerBase, path=None) -> None:
-    return asyncio.run(build_docker_async(command_handler, path))
 
 
 def get_ecr_login_token():
@@ -257,7 +265,7 @@ def parse_table(list_header: List[str], str_table: str) -> List[Dict[str, str]]:
 
 def list_container_status(
     command_handler: CommandHandlerBase,
-) -> dict:
+) -> List[Dict[str, str]]:
     # Command to check if the Docker container is running
     command = "docker ps -a"
 

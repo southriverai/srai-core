@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 
 class CommandHandlerBase(ABC):
@@ -6,7 +7,7 @@ class CommandHandlerBase(ABC):
         pass
 
     @abstractmethod
-    def execute(self, command: str) -> None:
+    def execute(self, command: str) -> Tuple[str, str]:
         raise NotImplementedError()
 
     @staticmethod

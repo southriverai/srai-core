@@ -9,7 +9,7 @@ async def release_code_public_async(command_handler: CommandHandlerBase):
     command_handler.execute(command)
 
     print("Creating distribution")
-    command = "python setup.py sdist"
+    command = "poetry build"
     command_handler.execute(command)
 
     print("Uploading distribution")

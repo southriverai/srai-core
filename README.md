@@ -2,6 +2,10 @@
 
 
 ## Changleog
+
+### 0.14.0
+- migrating to pyproject.toml
+
 ### 0.13.1
 - added try load options to stores
 
