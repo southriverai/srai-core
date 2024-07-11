@@ -1,7 +1,8 @@
 import asyncio
 import base64
 import os
-from typing import Dict, List
+from math import e
+from typing import Dict, List, Optional
 
 import paramiko
 from paramiko import SSHClient
@@ -38,40 +39,6 @@ def list_ecr_images() -> Dict[str, List[str]]:
     return dict_list_images
 
 
-def read_setup_cfg() -> dict:
-    path_file_setup_cfg = "setup.cfg"
-    dict_setup_cfg = {}
-    with open(path_file_setup_cfg, "r") as file_setup_cfg:
-        list_line = file_setup_cfg.readlines()
-        for line in list_line:
-            if "=" not in line:
-                continue
-            key = line.split("=")[0]
-            value = line.split("=")[1]
-            key = key.strip()
-            value = value.strip()
-            value = value.replace('"', "")
-            dict_setup_cfg[key] = value
-    return dict_setup_cfg
-
-
-def read_module_init() -> dict:
-    dict_setup_cfg = read_setup_cfg()
-    module_name = dict_setup_cfg["module-name"]
-    path_file_module_init = f"{module_name}/__init__.py"
-    dict_module_init = {}
-    with open(path_file_module_init, "r") as file_module_init:
-        list_line = file_module_init.readlines()
-        for line in list_line:
-            key = line.split("=")[0]
-            value = line.split("=")[1]
-            key = key.strip()
-            value = value.strip()
-            value = value.replace('"', "")
-            dict_module_init[key] = value
-    return dict_module_init
-
-
 def get_client_ssh(hostname: str, username: str, path_file_pem: str, port: int = 22) -> SSHClient:
     # Initialize SSH client
     ssh_client = paramiko.SSHClient()
@@ -92,14 +59,8 @@ def get_image_tag() -> str:
             image_version = toml["tool"]["poetry"]["version"]
             image_tag = f"{image_name}:{image_version}"
             return image_tag
-    elif os.path.isfile("setup.cfg"):
-        dict_module_init = read_module_init()
-        image_name = "srai/" + dict_module_init["__title__"]
-        image_version = dict_module_init["__version__"]
-        image_tag = f"{image_name}:{image_version}"
-        return image_tag
     else:
-        raise Exception("pyproject.toml or setup.cfg not found")
+        raise Exception("pyproject.toml not found")
 
 
 def get_registry_url(account_id, region_name) -> str:
@@ -150,31 +111,56 @@ def list_ecr_repository():
     return list_repository
 
 
-def create_ecr_repository():
+def repository_exists(repository_name: str):
+    list_repository = list_ecr_repository()
+    for repo in list_repository:
+        if repo["repositoryName"] == repository_name:
+            return True
+    return False
+
+
+def repository_create(repository_name: str, is_tag_immutable: bool = True):
     ecr_client = get_client_ecr()
-    dict_module_init = read_module_init()
-    image_name = "srai/" + dict_module_init["__title__"]
-    ecr_client.create_repository(repositoryName=image_name)
+    if is_tag_immutable:
+        image_tag_mutability = "IMMUTABLE"
+    else:
+        image_tag_mutability = "MUTABLE"
+    ecr_client.create_repository(repositoryName=repository_name, imageTagMutability=image_tag_mutability)
 
 
-async def release_docker_local_to_aws_async(command_handler: CommandHandlerBase) -> None:
+def repository_delete(repository_name: str):
+    ecr_client = get_client_ecr()
+    ecr_client.delete_repository(repositoryName=repository_name)
+
+
+async def release_docker_local_to_aws(command_handler: CommandHandlerBase) -> None:
     image_tag = get_image_tag()
     account_id = get_string_from_env("AWS_ACCOUNT_ID")
     region_name = get_string_from_env("AWS_REGION_NAME")
+    print(image_tag)
+    repository_name = image_tag.split(":")[0]
 
     login_docker_to_ecr(command_handler, account_id, region_name)
     registry_url = get_registry_url(account_id, region_name)
+    print(registry_url)
 
+    # check if repository exists in registry
+
+    list_repository = list_ecr_repository()
+    for repo in list_repository:
+        print(repo)
+
+    if not repository_exists(repository_name):
+        repository_create(repository_name)
+
+    # retag the image
     command = f"docker tag {image_tag} "
     command += f"{registry_url}/{image_tag}"
     command_handler.execute(command)
 
+    # push the image
     command = f"docker push {registry_url}/{image_tag}"
     command_handler.execute(command)
-
-
-def release_docker_aws_local(command_handler: CommandHandlerBase) -> None:
-    return asyncio.run(release_docker_local_to_aws_async(command_handler))
 
 
 def start_container_command(
@@ -204,19 +190,29 @@ def start_container(
     dict_env: Dict[str, str],
 ) -> None:
     return asyncio.run(
-        start_container_async(command_handler, account_id, region_name, image_tag, container_name, dict_env)
+        start_container_async(
+            command_handler,
+            image_tag,
+            container_name,
+            dict_env,
+            account_id=account_id,
+            region_name=region_name,
+        )
     )
 
 
 async def start_container_async(
     command_handler: CommandHandlerBase,
-    account_id: str,  # TODO remove
-    region_name: str,  # TODO remove
     image_tag: str,
     container_name: str,
     dict_env: Dict[str, str],
+    *,
+    account_id: Optional[str] = None,  # TODO remove
+    region_name: Optional[str] = None,  # TODO remove
 ) -> None:
-    command = login_docker_to_ecr(command_handler, account_id, region_name)
+    if account_id is not None and region_name is not None:
+        login_docker_to_ecr(command_handler, account_id, region_name)
+
     if account_id is not None and region_name is not None:
         command = pull_image_command(account_id, region_name, image_tag)
         # Execute the command
