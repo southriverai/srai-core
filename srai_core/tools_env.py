@@ -1,12 +1,14 @@
+import datetime
 import os
+import time
 from base64 import b64decode
 from typing import Any
 
 import boto3
 
 
-def read_package_info():
-    pass
+def get_posix_timestamp():  # TODO move to core
+    return int(time.mktime(datetime.datetime.now().timetuple()))
 
 
 def get_string_from_env(env_name: str) -> str:

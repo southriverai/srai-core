@@ -2,6 +2,10 @@
 
 
 ## Changleog
+### 0.14.2
+- added get_posix_timestamp()
+- added SourceStore
+- added pydantic dependancy
 
 ### 0.14.1
 - changes to srai-release
