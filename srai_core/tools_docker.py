@@ -1,42 +1,14 @@
-import asyncio
-import base64
 import os
-from math import e
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import paramiko
 from paramiko import SSHClient
 from pip._vendor import tomli  # TODO replace in 3.11
 
 from srai_core.command_handler_base import CommandHandlerBase
-from srai_core.tools_env import get_client_ecr, get_string_from_env
-
-
-def list_ecr_images() -> Dict[str, List[str]]:
-    client_ecr = get_client_ecr()
-    account_id = "169192938140"
-    region_name = "eu-west-1"
-    url = get_registry_url(account_id, region_name)
-    print(url)
-    # Create an ECR client
-
-    # Get a list of all repositories in your ECR
-    repositories = client_ecr.describe_repositories()
-
-    dict_list_images = {}
-    for repo in repositories["repositories"]:
-        repo_name = repo["repositoryName"]
-        print(f"Images in repository: {repo_name}")
-        dict_list_images[repo_name] = []
-
-        # Paginate through image details since ECR might have many images
-        paginator = client_ecr.get_paginator("list_images")
-        for page in paginator.paginate(repositoryName=repo_name):
-            for image in page["imageIds"]:
-                image_tag = image.get("imageTag", "latest")
-                dict_list_images[repo_name].append(image_tag)
-
-    return dict_list_images
+from srai_core.model.docker_registry_base import DockerRegistryBase
+from srai_core.model.docker_registry_ecr import DockerRegistryEcr
+from srai_core.tools_env import get_string_from_env
 
 
 def get_client_ssh(hostname: str, username: str, path_file_pem: str, port: int = 22) -> SSHClient:
@@ -51,20 +23,28 @@ def get_client_ssh(hostname: str, username: str, path_file_pem: str, port: int =
     return ssh_client
 
 
-def get_image_tag() -> str:
+def read_toml_dict() -> Dict:
     if os.path.isfile("pyproject.toml"):
         with open("pyproject.toml", "rb") as file:
-            toml = tomli.load(file)
-            image_name = "srai/" + toml["tool"]["poetry"]["name"]
-            image_version = toml["tool"]["poetry"]["version"]
-            image_tag = f"{image_name}:{image_version}"
-            return image_tag
+            return tomli.load(file)
     else:
         raise Exception("pyproject.toml not found")
 
 
-def get_registry_url(account_id, region_name) -> str:
-    return f"{account_id}.dkr.ecr.{region_name}.amazonaws.com"
+def get_project_name() -> str:
+    return read_toml_dict()["tool"]["poetry"]["name"]
+
+
+def get_project_version() -> str:
+    return read_toml_dict()["tool"]["poetry"]["version"]
+
+
+def get_image_tag() -> str:
+    toml = read_toml_dict()
+    image_name = "srai/" + toml["tool"]["poetry"]["name"]
+    image_version = toml["tool"]["poetry"]["version"]
+    image_tag = f"{image_name}:{image_version}"
+    return image_tag
 
 
 # TODO all should be async
@@ -89,69 +69,23 @@ async def build_docker(command_handler: CommandHandlerBase, path=None) -> None:
     command_handler.execute(command)
 
 
-def get_ecr_login_token():
-    ecr_client = get_client_ecr()
-    response = ecr_client.get_authorization_token()
-    token = response["authorizationData"][0]["authorizationToken"]
-    return base64.b64decode(token).decode("utf-8")
-
-
-def login_docker_to_ecr(command_handler: CommandHandlerBase, account_id: str, region_name: str) -> None:
-    token = get_ecr_login_token()
-    username, password = token.split(":")
-    registry_url = get_registry_url(account_id, region_name)
-    command = f"docker login --username {username} --password {password} {registry_url}"
-    command_handler.execute(command)
-
-
-def list_ecr_repository():
-    ecr_client = get_client_ecr()
-    response = ecr_client.describe_repositories()
-    list_repository = response["repositories"]
-    return list_repository
-
-
-def repository_exists(repository_name: str):
-    list_repository = list_ecr_repository()
-    for repo in list_repository:
-        if repo["repositoryName"] == repository_name:
-            return True
-    return False
-
-
-def repository_create(repository_name: str, is_tag_immutable: bool = True):
-    ecr_client = get_client_ecr()
-    if is_tag_immutable:
-        image_tag_mutability = "IMMUTABLE"
-    else:
-        image_tag_mutability = "MUTABLE"
-    ecr_client.create_repository(repositoryName=repository_name, imageTagMutability=image_tag_mutability)
-
-
-def repository_delete(repository_name: str):
-    ecr_client = get_client_ecr()
-    ecr_client.delete_repository(repositoryName=repository_name)
-
-
 async def release_docker_local_to_aws(command_handler: CommandHandlerBase) -> None:
     image_tag = get_image_tag()
     account_id = get_string_from_env("AWS_ACCOUNT_ID")
     region_name = get_string_from_env("AWS_REGION_NAME")
-    print(image_tag)
+    docker_registry = DockerRegistryEcr(account_id, region_name)
     repository_name = image_tag.split(":")[0]
-
-    login_docker_to_ecr(command_handler, account_id, region_name)
-    registry_url = get_registry_url(account_id, region_name)
-    print(registry_url)
+    docker_registry.login(command_handler)
+    registry_url = docker_registry.registry_url
 
     # check if repository exists in registry
 
-    list_repository = list_ecr_repository()
+    list_repository = docker_registry.repository_list()
     for repo in list_repository:
         print(repo)
 
-    if not repository_exists(repository_name):
-        repository_create(repository_name)
+    if not docker_registry.repository_exists(repository_name):
+        docker_registry.repository_create(repository_name)
 
     # retag the image
     command = f"docker tag {image_tag} "
@@ -175,65 +109,28 @@ def start_container_command(
     return command
 
 
-def pull_image_command(account_id: str, region_name: str, image_tag: str):
-    registry_url = get_registry_url(account_id, region_name)
-    command = f"docker pull {registry_url}/{image_tag}"
-    return command
-
-
-def start_container(
+async def start_container(
     command_handler: CommandHandlerBase,
-    account_id: str,
-    region_name: str,
+    docker_registry: DockerRegistryBase,
     image_tag: str,
     container_name: str,
     dict_env: Dict[str, str],
 ) -> None:
-    return asyncio.run(
-        start_container_async(
-            command_handler,
-            image_tag,
-            container_name,
-            dict_env,
-            account_id=account_id,
-            region_name=region_name,
-        )
-    )
-
-
-async def start_container_async(
-    command_handler: CommandHandlerBase,
-    image_tag: str,
-    container_name: str,
-    dict_env: Dict[str, str],
-    *,
-    account_id: Optional[str] = None,  # TODO remove
-    region_name: Optional[str] = None,  # TODO remove
-) -> None:
-    if account_id is not None and region_name is not None:
-        login_docker_to_ecr(command_handler, account_id, region_name)
-
-    if account_id is not None and region_name is not None:
-        command = pull_image_command(account_id, region_name, image_tag)
-        # Execute the command
-        command_handler.execute(command)
-
-        registry_url = get_registry_url(account_id, region_name)
+    docker_registry.login(command_handler)
+    docker_registry.image_pull(command_handler, image_tag)
     command = start_container_command(image_tag, container_name, dict_env)
-    if account_id is not None and region_name is not None:
-        command = command.replace(image_tag, f"{registry_url}/{image_tag}")
+
+    if type(docker_registry) is DockerRegistryEcr:
+        command = command.replace(image_tag, f"{docker_registry.registry_url}/{image_tag}")
     # Execute the command
     command_handler.execute(command)
 
 
-def list_container_name(ssh_client: SSHClient) -> List[str]:
+def list_container_name(command_handler: CommandHandlerBase) -> List[str]:
     # Command to check if the Docker container is running
     command = "docker ps -a --format '{{.Names}}'"
-
-    # Execute the command
-    _, stdout, _ = ssh_client.exec_command(command)
-    output = stdout.read().decode("utf-8").strip()
-    return output.split("\n")
+    output, _ = command_handler.execute(command)
+    return output.strip().split("\n")
 
 
 def parse_table(list_header: List[str], str_table: str) -> List[Dict[str, str]]:
@@ -303,6 +200,15 @@ def stop_container(
     command_handler.execute(command)
 
 
+def container_status(command_handler: CommandHandlerBase, container_name: str) -> str:
+    # Command to check if the Docker container is running
+    command = f"docker inspect --format='{{{{.State.Status}}}}' {container_name}"
+
+    # Execute the command
+    output_out, _ = command_handler.execute(command)
+    return output_out.strip()
+
+
 def remove_container(
     command_handler: CommandHandlerBase,
     container_name: str,
@@ -327,16 +233,3 @@ def clone_repository(
 
     command = f"git clone https://{git_token}@github.com/southriverai/{package_name}.git {path}/{package_name}"
     command_handler.execute(command)
-
-
-def exec_ssh(
-    ssh_client: SSHClient,
-    command: str,
-) -> None:
-    # Execute the command
-    print(command)
-    _, stdout, stderr = ssh_client.exec_command(command)
-    output = stdout.read().decode("utf-8").strip()
-    print(output)
-    output = stderr.read().decode("utf-8").strip()
-    print(output)

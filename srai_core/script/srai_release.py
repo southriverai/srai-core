@@ -5,8 +5,8 @@ import sys
 
 from srai_core.command_handler_base import CommandHandlerBase
 from srai_core.command_handler_subprocess import CommandHandlerSubprocess
-from srai_core.script.release_code_public import release_code_public_async
 from srai_core.script.srai_build import srai_build
+from srai_core.script.srai_release_code_public import srai_release_code_public
 from srai_core.tools_docker import build_docker, release_docker_local_to_aws
 
 
@@ -17,7 +17,7 @@ async def srai_release(deployment: dict) -> None:
         command_handler = CommandHandlerBase.from_dict(release_target["command_handler"])
         release_target_type = release_target["release_target_type"]
         if release_target_type == "release_code_public":
-            await release_code_public_async(command_handler)
+            await srai_release_code_public(command_handler)
         elif release_target_type == "release_docker_local_to_aws":
             await release_docker_local_to_aws(command_handler)
         else:
@@ -39,7 +39,7 @@ def main():
                 asyncio.run(build_docker(command_handler))
             else:
                 print("Doing default release: release_code_public")
-                asyncio.run(release_code_public_async(command_handler))
+                asyncio.run(srai_release_code_public(command_handler))
             sys.exit(0)
 
     path_file_deployment = sys.argv[1]

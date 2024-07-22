@@ -117,19 +117,19 @@ def bucket_public_access_block_save(
         else:
             raise Exception("fail")
     changed = False
-    if (not BlockPublicAcls is None) and (BlockPublicAcls != dict_pabc["BlockPublicAcls"]):
+    if (BlockPublicAcls is not None) and (BlockPublicAcls != dict_pabc["BlockPublicAcls"]):
         dict_pabc["BlockPublicAcls"] = BlockPublicAcls
         changed = True
 
-    if (not IgnorePublicAcls is None) and (IgnorePublicAcls != dict_pabc["IgnorePublicAcls"]):
+    if (IgnorePublicAcls is not None) and (IgnorePublicAcls != dict_pabc["IgnorePublicAcls"]):
         dict_pabc["IgnorePublicAcls"] = IgnorePublicAcls
         changed = True
 
-    if (not BlockPublicPolicy is None) and (BlockPublicPolicy != dict_pabc["BlockPublicPolicy"]):
+    if (BlockPublicPolicy is not None) and (BlockPublicPolicy != dict_pabc["BlockPublicPolicy"]):
         dict_pabc["BlockPublicPolicy"] = BlockPublicPolicy
         changed = True
 
-    if (not RestrictPublicBuckets is None) and (RestrictPublicBuckets != dict_pabc["RestrictPublicBuckets"]):
+    if (RestrictPublicBuckets is not None) and (RestrictPublicBuckets != dict_pabc["RestrictPublicBuckets"]):
         dict_pabc["RestrictPublicBuckets"] = RestrictPublicBuckets
         changed = True
 

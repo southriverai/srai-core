@@ -1,9 +1,9 @@
-from srai_core.tools_docker import container_logs
-from srai_core.command_handler_ssh import CommandHandlerSsh
-from srai_core.tools_docker import get_client_ssh
-from srai_core.tools_env import get_string_from_env
 import os
 import sys
+
+from srai_core.command_handler_ssh import CommandHandlerSsh
+from srai_core.tools_docker import container_logs, get_client_ssh
+from srai_core.tools_env import get_string_from_env
 
 
 def main():
@@ -14,9 +14,7 @@ def main():
         logs_count = int(sys.argv[2])
     else:
         logs_count = 100
-    hostname = get_string_from_env(
-        "AWS_CNC_HOSTNAME"
-    )  # TODO these could even come from boto3
+    hostname = get_string_from_env("AWS_CNC_HOSTNAME")  # TODO these could even come from boto3
     username = "ubuntu"
     path_file_pem = "c:/key/lightsaildefaultkey-eu-central-1.pem"
     if not os.path.exists(path_file_pem):

@@ -3,8 +3,10 @@ import json
 import sys
 
 from srai_core.command_handler_base import CommandHandlerBase
+from srai_core.model.docker_registry_base import DockerRegistryBase
+from srai_core.model.docker_registry_ecr import DockerRegistryEcr
 from srai_core.script.srai_release import srai_release
-from srai_core.tools_docker import get_image_tag, remove_container, start_container_async, stop_container
+from srai_core.tools_docker import get_image_tag, remove_container, start_container, stop_container
 from srai_core.tools_env import get_string_from_env
 
 
@@ -20,10 +22,12 @@ async def srai_deploy(deployment: dict):
             dict_env["IMAGE_TAG"] = image_tag
 
             container_name = image_tag.split(":")[0].split("/")[-1]
+            registry = DockerRegistryBase("", "", "")
             stop_container(command_handler, container_name)
             remove_container(command_handler, container_name)
-            await start_container_async(
+            await start_container(
                 command_handler,
+                registry,
                 image_tag,
                 container_name,
                 dict_env,
@@ -33,19 +37,18 @@ async def srai_deploy(deployment: dict):
             dict_env = deploy_target["environment_dict"]
             account_id = get_string_from_env("AWS_ACCOUNT_ID")  # TODO this is a mess
             region_name = get_string_from_env("AWS_REGION_NAME")  # TODO this is a mess
-
+            registry = DockerRegistryEcr(account_id, region_name)
             dict_env["IMAGE_TAG"] = image_tag
 
             container_name = image_tag.split(":")[0].split("/")[-1]
             stop_container(command_handler, container_name)
             remove_container(command_handler, container_name)
-            await start_container_async(
+            await start_container(
                 command_handler,
+                registry,
                 image_tag,
                 container_name,
                 dict_env,
-                account_id=account_id,
-                region_name=region_name,
             )
         else:
             print(f"Unknown `deploy_target_type`: {deploy_target_type}")
@@ -64,4 +67,5 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
     main()
