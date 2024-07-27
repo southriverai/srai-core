@@ -3,8 +3,8 @@ import os
 import requests
 
 from srai_core.store.bytes_store_s3 import BytesStoreS3
-from srai_core.tools.tools_s3 import bucket_create_read_only, bucket_exists, create_client_and_resource_s3
 from srai_core.tools_env import get_string_from_env
+from srai_core.tools_s3 import bucket_create_read_only, bucket_exists, create_client_and_resource_s3
 
 aws_access_key_id = get_string_from_env("AWS_ACCESS_KEY_ID")
 aws_secret_access_key = get_string_from_env("AWS_SECRET_ACCESS_KEY")

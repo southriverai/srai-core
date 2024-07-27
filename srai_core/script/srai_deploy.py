@@ -7,7 +7,7 @@ from srai_core.model.docker_registry_base import DockerRegistryBase
 from srai_core.model.docker_registry_ecr import DockerRegistryEcr
 from srai_core.script.srai_release import srai_release
 from srai_core.tools_docker import get_image_tag, remove_container, start_container, stop_container
-from srai_core.tools_env import get_string_from_env
+from srai_core.tools_env import get_deployment, get_string_from_env
 
 
 async def srai_deploy(deployment: dict):
@@ -56,16 +56,9 @@ async def srai_deploy(deployment: dict):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: deploy_docker deployment_file.json")
-        sys.exit(1)
 
-    path_deployment_file = sys.argv[1]
-    with open(path_deployment_file) as f:
-        deployment = json.load(f)
-    asyncio.run(srai_deploy(deployment))
+    asyncio.run(srai_deploy(get_deployment()))
 
 
 if __name__ == "__main__":
-    main()
     main()

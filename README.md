@@ -2,6 +2,12 @@
 
 
 ## Changleog
+### 0.14.4
+- added srai_killall
+
+### 0.14.3
+- cleaned up much of the CI scripting
+
 ### 0.14.2
 - added get_posix_timestamp()
 - added SourceStore

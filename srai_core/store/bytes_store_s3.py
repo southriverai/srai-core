@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from srai_core.store.bytes_store_base import BytesStoreBase
-from srai_core.tools.tools_s3 import create_client_and_resource_s3
+from srai_core.tools_s3 import create_client_and_resource_s3
 
 
 class BytesStoreS3(BytesStoreBase):

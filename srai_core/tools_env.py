@@ -1,10 +1,50 @@
 import datetime
+import json
 import os
+import sys
 import time
 from base64 import b64decode
 from typing import Any
 
 import boto3
+
+
+def get_deployment() -> dict:
+    if len(sys.argv) == 2:
+        path_file_deployment = sys.argv[1]
+        with open(path_file_deployment) as file:
+            return json.load(file)
+    else:
+        if os.path.isfile("deployment.json"):
+            print("Found default 'deployment.json' file")
+            path_file_deployment = "deployment.json"
+            with open(path_file_deployment) as file:
+                deployment = json.load(file)
+        elif os.path.isfile("dockerfile"):
+            print("Found no deployment file but a dockerfile docker release:")
+            deployment = {
+                "list_build_target": [
+                    {
+                        "command_handler": {"__Type__": "CommandHandlerSubprocess"},
+                        "build_docker_type": "build_docker",
+                    }
+                ],
+                "list_release_target": [],
+                "list_deploy_target": [],
+            }
+        else:
+            print("Found no deployment file and no dockerfile doing default realese:")
+            deployment = {
+                "list_build_target": [],
+                "list_release_target": [
+                    {
+                        "command_handler": {"__Type__": "CommandHandlerSubprocess"},
+                        "release_target_type": "release_code_public",
+                    }
+                ],
+                "list_deploy_target": [],
+            }
+        return deployment
 
 
 def get_posix_timestamp():  # TODO move to core

@@ -4,6 +4,7 @@ import sys
 
 from srai_core.command_handler_base import CommandHandlerBase
 from srai_core.tools_docker import build_docker
+from srai_core.tools_env import get_deployment
 
 
 async def srai_build(deployment: dict) -> None:
@@ -21,13 +22,7 @@ async def srai_build(deployment: dict) -> None:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: deploy_docker deployment_file.json")
-        sys.exit(1)
-    path_deployment_file = sys.argv[1]
-    with open(path_deployment_file) as f:
-        deployment = json.load(f)
-    asyncio.run(srai_build(deployment))
+    asyncio.run(srai_build(get_deployment()))
 
 
 if __name__ == "__main__":
