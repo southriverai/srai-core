@@ -1,6 +1,7 @@
 import os
 import shutil
 
+from srai_core.model.instance_header import InstanceHeader
 from srai_core.store.database_base import DatabaseBase
 from srai_core.store.database_disk import DatabaseDisk
 from srai_core.store.database_memory import DatabaseMemory
@@ -27,6 +28,43 @@ def get_mongo() -> DatabaseBase:
     connection_string = get_string_from_env("MONGODB_CONNECTION_STRING")
     database_name = "test_database"
     return DatabaseMongo(database_name, connection_string)
+
+
+def test_object_store(database: DatabaseBase) -> None:
+    collection_name = "test_base_model_store"
+    instance_store = database.get_object_store(collection_name, InstanceHeader)
+    print("clear store")
+    instance_store.delete_document_all()
+    assert instance_store.count_object() == 0
+    instance_store.save_document(
+        "1",
+        InstanceHeader(instance_id="1", content_type="test", content_size=0, created_at_posix_timestamp=0, metadata={}),
+    )
+    assert instance_store.count_object() == 1
+    assert instance_store.exists_object("1")
+    assert not instance_store.exists_object("2")
+    object_1 = instance_store.load_object("1")
+    assert object_1.instance_id == "1"
+    assert object_1.content_type == "test"
+
+    assert len(instance_store.load_object_all()) == 1
+    assert len(instance_store.load_object_for_query({"content_type": "test"})) == 1
+    instance_store.save_document(
+        "1",
+        InstanceHeader(instance_id="1", content_type="test", content_size=0, created_at_posix_timestamp=0, metadata={}),
+    )
+    instance_store.save_document(
+        "2",
+        InstanceHeader(instance_id="2", content_type="test", content_size=1, created_at_posix_timestamp=0, metadata={}),
+    )
+
+    assert len(instance_store.load_object_all()) == 2
+    assert len(instance_store.load_object_for_query({"content_type": "test"})) == 2
+    assert len(instance_store.load_object_for_query({"content_type": "test"})) == 2
+    assert len(instance_store.load_object_for_query({"instance_id": "1"})) == 1
+    assert len(instance_store.load_object_for_query({"content_size": 1})) == 1
+    # delete store
+    instance_store.delete_document_all()
 
 
 def test_database(database: DatabaseBase) -> None:
@@ -107,5 +145,10 @@ if __name__ == "__main__":
 
     # test_database(get_memory())
     # test_database(get_disk())
-    test_database(get_mongo())
+    #    test_database(get_mongo())
+    # test_migrate(get_disk(), get_mongo())
+
+    # test_database(get_memory())
+    # test_database(get_disk())
+    test_object_store(get_mongo())
     # test_migrate(get_disk(), get_mongo())
