@@ -2,6 +2,10 @@
 
 
 ## Changleog
+### 0.15.0
+- added object store
+- added various ml types
+
 ### 0.14.4
 - added srai_killall
 
