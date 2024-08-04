@@ -55,12 +55,12 @@ class ObjectStore(Generic[T]):
     def delete_object(self, object_id: str) -> None:
         self.document_store.delete_document(object_id)
 
-    def delete_document_all(self) -> int:
+    def delete_object_all(self) -> int:
         list_object_id = self.load_list_object_id()
         for object_id in list_object_id:
             self.delete_object(object_id)
         return len(list_object_id)
 
-    def save_document(self, object_id: str, object: T) -> None:
+    def save_object(self, object_id: str, object: T) -> None:
         document = object.model_dump()
         self.document_store.save_document(object_id, document)

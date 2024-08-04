@@ -1,13 +1,18 @@
 from typing import Dict, List
 
 from srai_core.store.bytes_store_base import BytesStoreBase
-from srai_core.tools_s3 import create_client_and_resource_s3
+from srai_core.tools_s3 import bucket_create_read_only, bucket_exists, create_client_and_resource_s3
 
 
 class BytesStoreS3(BytesStoreBase):
-    # file store for
+
     def __init__(
-        self, aws_access_key_id: str, aws_secret_access_key: str, aws_name_region: str, name_bucket: str
+        self,
+        aws_access_key_id: str,
+        aws_secret_access_key: str,
+        aws_name_region: str,
+        name_bucket: str,
+        create_bucket_if_missing: bool = True,
     ) -> None:
         self.aws_name_region = aws_name_region
         self.name_bucket = name_bucket
@@ -17,6 +22,12 @@ class BytesStoreS3(BytesStoreBase):
         )
         self.client_s3 = client_s3
         self.resource_s3 = resource_s3
+
+        if not bucket_exists(self.client_s3, self.resource_s3, self.name_bucket):
+            if create_bucket_if_missing:
+                bucket_create_read_only(self.client_s3, self.resource_s3, self.name_bucket, self.aws_name_region)
+            else:
+                raise Exception(f"Bucket not found: {self.name_bucket}")
 
     def exists_bytes(self, bytes_id: str) -> bool:
         try:
