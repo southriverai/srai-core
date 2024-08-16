@@ -2,9 +2,12 @@
 
 
 ## Changleog
+### 0.15.2
+- added databases3
+
 ### 0.15.1
 - typos in object store
-- autocreate bucket in bytestoere s3
+- autocreate bucket in bytestore s3
 
 ### 0.15.0
 - added object store
