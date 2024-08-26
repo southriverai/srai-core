@@ -2,6 +2,13 @@
 
 
 ## Changleog
+
+### 0.15.4
+- added port mapping
+
+### 0.15.3
+- fixed deploy issui
+
 ### 0.15.2
 - added databases3
 

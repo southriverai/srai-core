@@ -18,23 +18,32 @@ async def srai_deploy(deployment: dict):
         if deploy_target_type == "deploy_docker":
             image_tag = get_image_tag()
             dict_env = deploy_target["environment_dict"]
-
+            if "port_dict" in deploy_target:
+                dict_port = deploy_target["port_dict"]
+            else:
+                dict_port = {}
             dict_env["IMAGE_TAG"] = image_tag
 
             container_name = image_tag.split(":")[0].split("/")[-1]
-            registry = DockerRegistryBase("", "", "")
+            registry = DockerRegistryBase("", "kozzion", "wrc0ceq5xjk-ext!PET")
             stop_container(command_handler, container_name)
             remove_container(command_handler, container_name)
+
             await start_container(
                 command_handler,
                 registry,
                 image_tag,
                 container_name,
                 dict_env,
+                dict_port,
             )
         elif deploy_target_type == "deploy_docker_aws":
             image_tag = get_image_tag()
             dict_env = deploy_target["environment_dict"]
+            if "port_dict" in deploy_target:
+                dict_port = deploy_target["port_dict"]
+            else:
+                dict_port = {}
             account_id = get_string_from_env("AWS_ACCOUNT_ID")  # TODO this is a mess
             region_name = get_string_from_env("AWS_REGION_NAME")  # TODO this is a mess
             registry = DockerRegistryEcr(account_id, region_name)
@@ -43,13 +52,7 @@ async def srai_deploy(deployment: dict):
             container_name = image_tag.split(":")[0].split("/")[-1]
             stop_container(command_handler, container_name)
             remove_container(command_handler, container_name)
-            await start_container(
-                command_handler,
-                registry,
-                image_tag,
-                container_name,
-                dict_env,
-            )
+            await start_container(command_handler, registry, image_tag, container_name, dict_env, dict_port)
         else:
             print(f"Unknown `deploy_target_type`: {deploy_target_type}")
             sys.exit(1)

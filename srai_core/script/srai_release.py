@@ -4,13 +4,14 @@ import sys
 from srai_core.command_handler_base import CommandHandlerBase
 from srai_core.script.srai_build import srai_build
 from srai_core.script.srai_release_code_public import srai_release_code_public
-from srai_core.tools_docker import build_docker, release_docker_local_to_aws
+from srai_core.tools_docker import release_docker_local_to_aws
 from srai_core.tools_env import get_deployment
 
 
 async def srai_release(deployment: dict) -> None:
-    await srai_build(deployment)
+    # No username means that the image is local
 
+    await srai_build(deployment)
     for release_target in deployment["list_release_target"]:
         command_handler = CommandHandlerBase.from_dict(release_target["command_handler"])
         release_target_type = release_target["release_target_type"]

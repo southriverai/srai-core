@@ -101,10 +101,13 @@ def start_container_command(
     image_tag: str,
     container_name: str,
     dict_env: Dict[str, str],
+    dict_port: Dict[str, str],
 ) -> str:
     command = f"docker run -d --name {container_name}"
     for key, value in dict_env.items():
         command += f" -e {key}={value}"
+    for key, value in dict_port.items():
+        command += f" -p {key}:{value}"
     command += f" {image_tag}"
     return command
 
@@ -115,10 +118,15 @@ async def start_container(
     image_tag: str,
     container_name: str,
     dict_env: Dict[str, str],
+    dict_port: Dict[str, str],
 ) -> None:
-    docker_registry.login(command_handler)
-    docker_registry.image_pull(command_handler, image_tag)
-    command = start_container_command(image_tag, container_name, dict_env)
+    print("here")
+    # No username means that the image is local
+    if docker_registry.get_username() != "":
+        print(f"username: {docker_registry.get_username()}")
+        docker_registry.login(command_handler)
+        docker_registry.image_pull(command_handler, image_tag)
+    command = start_container_command(image_tag, container_name, dict_env, dict_port)
 
     if type(docker_registry) is DockerRegistryEcr:
         command = command.replace(image_tag, f"{docker_registry.registry_url}/{image_tag}")
