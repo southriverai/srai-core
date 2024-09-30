@@ -3,6 +3,10 @@
 
 ## Changleog
 
+
+### 0.15.5
+- enabled mongo querries
+
 ### 0.15.4
 - added port mapping
 
