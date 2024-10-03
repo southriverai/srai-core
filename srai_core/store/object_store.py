@@ -45,12 +45,19 @@ class ObjectStore(Generic[T]):
     def load_list_object_id(self) -> List[str]:
         return self.document_store.load_list_document_id()
 
-    def load_object_for_query(self, query: Dict[str, str]) -> Dict[str, T]:
-        dict_document = self.document_store.load_document_for_query(query)
+    def load_object_dict_for_query(self, query: Dict[str, str], limit: int = 0, offset: int = 0) -> Dict[str, T]:
+        dict_document = self.document_store.load_document_dict_for_query(query, limit, offset)
         dict_object = {}
         for document_id, document in dict_document.items():
             dict_object[document_id] = self._document_to_object(document)
         return dict_object
+
+    def load_object_for_query(self, query: Dict[str, str]) -> Optional[T]:
+        document = self.document_store.load_document_for_query(query)
+        if document is not None:
+            return self._document_to_object(document)
+        else:
+            return None
 
     def delete_object(self, object_id: str) -> None:
         self.document_store.delete_document(object_id)

@@ -39,10 +39,11 @@ class DocumentStoreBase(ABC):
     def load_list_document_id(self) -> list:
         raise NotImplementedError()
 
-    def load_document_dict_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
+    def load_document_dict_for_query(self, query: Dict[str, str], limit: int = 0, offset: int = 0) -> Dict[str, dict]:
         dict_document = self.load_document_all()
         dict_selected = {}
-        for document_id, document in dict_document.items():
+
+        for document_id, document in list(dict_document.items())[offset : offset + limit]:
             for key in query:
                 if key not in document:
                     continue
@@ -51,7 +52,7 @@ class DocumentStoreBase(ABC):
         return dict_selected
 
     def load_document_for_query(self, query: Dict[str, str]) -> Optional[dict]:
-        dict_document = self.load_document_dict_for_query(query)
+        dict_document = self.load_document_dict_for_query(query, 1, 0)
         if len(dict_document) == 0:
             return None
         if len(dict_document) > 1:

@@ -23,7 +23,8 @@
         "--line-length=120"
     ],
     "flake8.args": [
-        "--max-line-length=120"
+        "--max-line-length=120",
+        "--ignore=E203"
     ],
     "isort.args": [
         "--profile=black",

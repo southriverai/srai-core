@@ -3,6 +3,9 @@
 
 ## Changleog
 
+### 0.15.7
+- updated object store
+- added limit and offset to query calls
 
 ### 0.15.6
 - change load_document_for_query  to load_document_dict_for_query
