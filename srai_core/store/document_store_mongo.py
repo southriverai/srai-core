@@ -40,7 +40,7 @@ class DocumentStoreMongo(DocumentStoreBase):
             dict_document[document_result["_id"]] = document_result["document"]
         return dict_document
 
-    def load_document_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
+    def load_document_dict_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
         query_mod = {}
         for key in query:
             query_mod["document." + key] = query[key]

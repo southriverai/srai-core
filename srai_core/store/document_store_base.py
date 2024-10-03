@@ -39,7 +39,7 @@ class DocumentStoreBase(ABC):
     def load_list_document_id(self) -> list:
         raise NotImplementedError()
 
-    def load_document_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
+    def load_document_dict_for_query(self, query: Dict[str, str]) -> Dict[str, dict]:
         dict_document = self.load_document_all()
         dict_selected = {}
         for document_id, document in dict_document.items():
@@ -49,6 +49,14 @@ class DocumentStoreBase(ABC):
                 if document[key] == query[key]:
                     dict_selected[document_id] = document
         return dict_selected
+
+    def load_document_for_query(self, query: Dict[str, str]) -> Optional[dict]:
+        dict_document = self.load_document_dict_for_query(query)
+        if len(dict_document) == 0:
+            return None
+        if len(dict_document) > 1:
+            raise Exception(f"Query '{query}' returned multiple documents")
+        return dict_document[list(dict_document.keys())[0]]
 
     @abstractmethod
     def delete_document(self, document_id: str) -> None:

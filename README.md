@@ -4,6 +4,10 @@
 ## Changleog
 
 
+### 0.15.6
+- change load_document_for_query  to load_document_dict_for_query
+- added load_document_for_query that returns a single document
+
 ### 0.15.5
 - enabled mongo querries
 
