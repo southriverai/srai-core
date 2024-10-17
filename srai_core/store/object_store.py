@@ -1,4 +1,4 @@
-from typing import Dict, Generic, List, Optional, Type, TypeVar
+from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -45,8 +45,10 @@ class ObjectStore(Generic[T]):
     def load_list_object_id(self) -> List[str]:
         return self.document_store.load_list_document_id()
 
-    def load_object_dict_for_query(self, query: Dict[str, str], limit: int = 0, offset: int = 0) -> Dict[str, T]:
-        dict_document = self.document_store.load_document_dict_for_query(query, limit, offset)
+    def load_object_dict_for_query(
+        self, query: Dict[str, str], order_by: List[Tuple[str, bool]], limit: int = 0, offset: int = 0
+    ) -> Dict[str, T]:
+        dict_document = self.document_store.load_document_dict_for_query(query, order_by, limit, offset)
         dict_object = {}
         for document_id, document in dict_document.items():
             dict_object[document_id] = self._document_to_object(document)

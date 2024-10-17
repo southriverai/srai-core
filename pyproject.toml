@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "srai-core"
-version = "0.15.8"
+version = "0.15.9"
 description = "A library core functions used in other SRAI libraries."
 authors = ["Jaap Oosterbroek <jaap.oosterbroek@southriverai.com>"]
 license = "MIT"

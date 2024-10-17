@@ -3,6 +3,9 @@
 
 ## Changleog
 
+### 0.15.9
+- added orderby to object store
+
 ### 0.15.8
 - added orderby
 
