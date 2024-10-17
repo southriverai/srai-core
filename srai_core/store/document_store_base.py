@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 class DocumentStoreBase(ABC):
@@ -39,7 +39,13 @@ class DocumentStoreBase(ABC):
     def load_list_document_id(self) -> list:
         raise NotImplementedError()
 
-    def load_document_dict_for_query(self, query: Dict[str, str], limit: int = 0, offset: int = 0) -> Dict[str, dict]:
+    def load_document_dict_for_query(
+        self,
+        query: Dict[str, str],
+        order_by: List[Tuple[str, bool]] = [],
+        limit: int = 0,
+        offset: int = 0,
+    ) -> Dict[str, dict]:
         dict_document = self.load_document_all()
         dict_selected = {}
 
@@ -49,10 +55,11 @@ class DocumentStoreBase(ABC):
                     continue
                 if document[key] == query[key]:
                     dict_selected[document_id] = document
+
         return dict_selected
 
     def load_document_for_query(self, query: Dict[str, str]) -> Optional[dict]:
-        dict_document = self.load_document_dict_for_query(query, 1, 0)
+        dict_document = self.load_document_dict_for_query(query, limit=1, offset=0)
         if len(dict_document) == 0:
             return None
         if len(dict_document) > 1:

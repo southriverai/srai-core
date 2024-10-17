@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "srai-core"
-version = "0.15.7"
+version = "0.15.8"
 description = "A library core functions used in other SRAI libraries."
-authors = ["Jaap Oosterbroek <jaap.oosterbroek@gmail.com>"]
+authors = ["Jaap Oosterbroek <jaap.oosterbroek@southriverai.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/southriverai/srai-core"

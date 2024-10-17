@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 from pymongo.mongo_client import MongoClient
 
@@ -40,13 +40,33 @@ class DocumentStoreMongo(DocumentStoreBase):
             dict_document[document_result["_id"]] = document_result["document"]
         return dict_document
 
-    def load_document_dict_for_query(self, query: Dict[str, str], limit: int = 0, offset: int = 0) -> Dict[str, dict]:
+    def load_document_dict_for_query(
+        self,
+        query: Dict[str, str],
+        order_by: List[Tuple[str, bool]] = [],
+        limit: int = 0,
+        offset: int = 0,
+    ) -> Dict[str, dict]:
         query_mod = {}
         for key in query:
             query_mod["document." + key] = query[key]
-        cursor_document_result = self.collection.find(query_mod).skip(offset).limit(limit)
+        order_mod = []
+        for field, asc in order_by:
+            order_mod.append(("document." + field, 1 if asc else -1))
+
+        cursor = self.collection.find(query_mod)
+        # check if cursor is empty
+        # if not cursor.alive:
+        #     return {}
+        if len(order_mod) > 0:
+            cursor = cursor.sort(order_mod)
+        if limit > 0:
+            cursor = cursor.limit(limit)
+        if offset > 0:
+            cursor = cursor.skip(offset)
+
         dict_document = {}
-        for document_result in cursor_document_result:
+        for document_result in cursor:
             dict_document[document_result["_id"]] = document_result["document"]
         return dict_document
 

@@ -3,6 +3,9 @@
 
 ## Changleog
 
+### 0.15.8
+- added orderby
+
 ### 0.15.7
 - updated object store
 - added limit and offset to query calls
